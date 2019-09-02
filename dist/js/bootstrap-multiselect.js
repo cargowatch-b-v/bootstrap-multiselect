@@ -41,140 +41,20 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-!function ($, ko) {
-    "use strict";// jshint ;_;
-
-    if (typeof ko !== 'undefined' && ko.bindingHandlers && !ko.bindingHandlers.multiselect) {
-        ko.bindingHandlers.multiselect = {
-            after: ['options', 'value', 'selectedOptions', 'enable', 'disable'],
-
-            init: function (element, valueAccessor, allBindings, viewModel, bindingContext) {
-                var $element = $(element);
-                var config = ko.toJS(valueAccessor());
-
-                $element.multiselect(config);
-
-                if (allBindings.has('options')) {
-                    var options = allBindings.get('options');
-                    if (ko.isObservable(options)) {
-                        ko.computed({
-                            read: function () {
-                                options();
-                                setTimeout(function () {
-                                    var ms = $element.data('multiselect');
-                                    if (ms)
-                                        ms.updateOriginalOptions();//Not sure how beneficial this is.
-                                    $element.multiselect('rebuild');
-                                }, 1);
-                            },
-                            disposeWhenNodeIsRemoved: element
-                        });
-                    }
-                }
-
-                //value and selectedOptions are two-way, so these will be triggered even by our own actions.
-                //It needs some way to tell if they are triggered because of us or because of outside change.
-                //It doesn't loop but it's a waste of processing.
-                if (allBindings.has('value')) {
-                    var value = allBindings.get('value');
-                    if (ko.isObservable(value)) {
-                        ko.computed({
-                            read: function () {
-                                value();
-                                setTimeout(function () {
-                                    $element.multiselect('refresh');
-                                }, 1);
-                            },
-                            disposeWhenNodeIsRemoved: element
-                        }).extend({ rateLimit: 100, notifyWhenChangesStop: true });
-                    }
-                }
-
-                //Switched from arrayChange subscription to general subscription using 'refresh'.
-                //Not sure performance is any better using 'select' and 'deselect'.
-                if (allBindings.has('selectedOptions')) {
-                    var selectedOptions = allBindings.get('selectedOptions');
-                    if (ko.isObservable(selectedOptions)) {
-                        ko.computed({
-                            read: function () {
-                                selectedOptions();
-                                setTimeout(function () {
-                                    $element.multiselect('refresh');
-                                }, 1);
-                            },
-                            disposeWhenNodeIsRemoved: element
-                        }).extend({ rateLimit: 100, notifyWhenChangesStop: true });
-                    }
-                }
-
-                var setEnabled = function (enable) {
-                    setTimeout(function () {
-                        if (enable)
-                            $element.multiselect('enable');
-                        else
-                            $element.multiselect('disable');
-                    });
-                };
-
-                if (allBindings.has('enable')) {
-                    var enable = allBindings.get('enable');
-                    if (ko.isObservable(enable)) {
-                        ko.computed({
-                            read: function () {
-                                setEnabled(enable());
-                            },
-                            disposeWhenNodeIsRemoved: element
-                        }).extend({ rateLimit: 100, notifyWhenChangesStop: true });
-                    } else {
-                        setEnabled(enable);
-                    }
-                }
-
-                if (allBindings.has('disable')) {
-                    var disable = allBindings.get('disable');
-                    if (ko.isObservable(disable)) {
-                        ko.computed({
-                            read: function () {
-                                setEnabled(!disable());
-                            },
-                            disposeWhenNodeIsRemoved: element
-                        }).extend({ rateLimit: 100, notifyWhenChangesStop: true });
-                    } else {
-                        setEnabled(!disable);
-                    }
-                }
-
-                ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
-                    $element.multiselect('destroy');
-                });
-            },
-
-            update: function (element, valueAccessor, allBindings, viewModel, bindingContext) {
-                var $element = $(element);
-                var config = ko.toJS(valueAccessor());
-
-                $element.multiselect('setOptions', config);
-                $element.multiselect('rebuild');
-            }
-        };
-    }
-
-    function forEach(array, callback) {
-        for (var index = 0; index < array.length; ++index) {
-            callback(array[index], index);
-        }
-    }
+(function ($) {
+    "use strict";
+    console.log($.fn.jquery);
 
     /**
      * Constructor to create a new multiselect using the given select.
      *
-     * @param {jQuery} select
+     * @param {jQuery} element
      * @param {Object} options
      * @returns {Multiselect}
      */
-    function Multiselect(select, options) {
+    function Multiselect(element, options) {
 
-        this.$select = $(select);
+        this.$select = $(element);
         this.options = this.mergeOptions($.extend({}, options, this.$select.data()));
 
         // Placeholder via data attributes
@@ -226,7 +106,7 @@
     }
 
     Multiselect.prototype = {
-
+        constructor: Multiselect,
         defaults: {
             /**
              * Default text function will either print 'None selected' in case no
@@ -1504,7 +1384,13 @@
                         value: option.value
                     });
 
-                    forEach(option.children, function (subOption) { // add children option tags
+                    let customForEach = function (array, callback) {
+                        for (var index = 0; index < array.length; ++index) {
+                            callback(array[index], index);
+                        }
+                    }
+
+                    customForEach(option.children, function (subOption) { // add children option tags
                         var attributes = {
                             value: subOption.value,
                             label: subOption.label || subOption.value,
@@ -1761,5 +1647,5 @@
     $(function () {
         $("select[data-role=multiselect]").multiselect();
     });
+})(window.jQuery);
 
-}(window.jQuery, window.ko);
