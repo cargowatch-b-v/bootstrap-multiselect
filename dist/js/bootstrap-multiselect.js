@@ -43,8 +43,6 @@
  */
 (function ($) {
     "use strict";
-    console.log($.fn.jquery);
-
     /**
      * Constructor to create a new multiselect using the given select.
      *
