@@ -317,8 +317,6 @@
             }
         },
 
-        constructor: Multiselect,
-
         /**
          * Builds the container of the multiselect.
          */
